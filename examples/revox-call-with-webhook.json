@@ -1,0 +1,96 @@
+{
+	"name": "Revox Call With Webhook",
+	"nodes": [
+		{
+			"parameters": {},
+			"id": "ManualTriggerNode",
+			"name": "Manual Trigger",
+			"type": "n8n-nodes-base.manualTrigger",
+			"typeVersion": 1,
+			"position": [300, 380]
+		},
+		{
+			"parameters": {
+				"operation": "placeCall",
+				"phoneNumber": "+15555550123",
+				"prompt": "You are a friendly assistant confirming tomorrow's appointment.",
+				"forceNow": true,
+				"webhookUrl": "={{ $node[\"Revox Trigger\"].webhookUrl }}"
+			},
+			"id": "RevoxActionNode",
+			"name": "Revox",
+			"type": "n8n-nodes-revox.Revox",
+			"typeVersion": 1,
+			"position": [540, 380],
+			"credentials": {
+				"revoxApi": {
+					"name": "Revox API"
+				}
+			}
+		},
+		{
+			"parameters": {
+				"filterByResult": "all"
+			},
+			"id": "RevoxTriggerNode",
+			"name": "Revox Trigger",
+			"type": "n8n-nodes-revox.RevoxTrigger",
+			"typeVersion": 1,
+			"position": [300, 160]
+		},
+		{
+			"parameters": {
+				"keepOnlySet": false,
+				"values": {
+					"string": [
+						{
+							"name": "summary",
+							"value": "={{ $json.annotation }}"
+						},
+						{
+							"name": "recordingUrl",
+							"value": "={{ $json.recording_url }}"
+						},
+						{
+							"name": "webhookUrl",
+							"value": "={{ $json.webhookUrl }}"
+						}
+					]
+				}
+			},
+			"id": "SetNode",
+			"name": "Prepare Follow-up",
+			"type": "n8n-nodes-base.set",
+			"typeVersion": 2.1,
+			"position": [540, 160]
+		}
+	],
+	"connections": {
+		"Manual Trigger": {
+			"main": [
+				[
+					{
+						"node": "Revox",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Revox Trigger": {
+			"main": [
+				[
+					{
+						"node": "Prepare Follow-up",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		}
+	},
+	"active": false,
+	"settings": {},
+	"staticData": null,
+	"pinData": {}
+}
