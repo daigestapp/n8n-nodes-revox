@@ -1,6 +1,6 @@
 {
 	"name": "n8n-nodes-revox",
-	"version": "1.0.2",
+	"version": "1.1.0",
 	"license": "MIT",
 	"homepage": "https://docs.getrevox.com/n8n/quickstart",
 	"description": "n8n community nodes for the Revox AI calling platform",
