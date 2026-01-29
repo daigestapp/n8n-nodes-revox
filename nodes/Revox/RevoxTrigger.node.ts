@@ -11,6 +11,7 @@ export class RevoxTrigger implements INodeType {
 		name: 'revoxTrigger',
 		icon: 'file:../../icons/revox.svg',
 		group: ['trigger'],
+		// @ts-expect-error - usableAsTool exists at runtime; n8n-workflow types may lag
 		usableAsTool: true,
 		version: 1,
 		subtitle: '=Trigger on call completion',

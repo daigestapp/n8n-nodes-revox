@@ -56,10 +56,11 @@ export class Revox implements INodeType {
 		displayName: 'Revox',
 		name: 'revox',
 		icon: 'file:../../icons/revox.svg',
+		// @ts-expect-error - usableAsTool exists at runtime; n8n-workflow types may lag
 		usableAsTool: true,
 		group: ['transform'],
 		version: 1,
-		subtitle: '={{$parameter["operation"]}}',
+		subtitle: '={{$parameter["resource"]}} - {{$parameter["operation"]}}',
 		description: 'Interact with Revox AI calling API',
 		defaults: {
 			name: 'Revox',
@@ -74,31 +75,47 @@ export class Revox implements INodeType {
 		],
 		properties: [
 			{
+				displayName: 'Resource',
+				name: 'resource',
+				type: 'options',
+				noDataExpression: true,
+				options: [
+					{ name: 'Call', value: 'call' },
+					{ name: 'Assistant', value: 'assistant' },
+				],
+				default: 'call',
+			},
+			{
 				displayName: 'Operation',
 				name: 'operation',
 				type: 'options',
 				noDataExpression: true,
+				displayOptions: {
+					show: { resource: ['call'] },
+				},
 				options: [
-					{
-						name: 'Place Call',
-						value: 'placeCall',
-						description: 'Place a new AI call',
-						action: 'Place a call',
-					},
-					{
-						name: 'Get Call',
-						value: 'getCall',
-						description: 'Get details of a specific call',
-						action: 'Get a call',
-					},
-					{
-						name: 'Get Call History',
-						value: 'getCallHistory',
-						description: 'Get list of calls',
-						action: 'Get call history',
-					},
+					{ name: 'Get Call', value: 'getCall', description: 'Get details of a specific call', action: 'Get a call' },
+					{ name: 'Get Call History', value: 'getCallHistory', description: 'Get list of calls', action: 'Get call history' },
+					{ name: 'Place Call', value: 'placeCall', description: 'Place a new AI call', action: 'Place a call' },
 				],
 				default: 'placeCall',
+			},
+			{
+				displayName: 'Operation',
+				name: 'operation',
+				type: 'options',
+				noDataExpression: true,
+				displayOptions: {
+					show: { resource: ['assistant'] },
+				},
+				options: [
+					{ name: 'Create', value: 'createAssistant', description: 'Create an assistant', action: 'Create an assistant' },
+					{ name: 'Delete', value: 'deleteAssistant', description: 'Delete an assistant', action: 'Delete an assistant' },
+					{ name: 'Get', value: 'getAssistant', description: 'Get an assistant by ID', action: 'Get an assistant' },
+					{ name: 'List', value: 'listAssistants', description: 'List all assistants', action: 'List assistants' },
+					{ name: 'Update', value: 'updateAssistant', description: 'Update an assistant', action: 'Update an assistant' },
+				],
+				default: 'listAssistants',
 			},
 			// Place Call parameters
 			{
@@ -107,6 +124,7 @@ export class Revox implements INodeType {
 				type: 'string',
 				displayOptions: {
 					show: {
+						resource: ['call'],
 						operation: ['placeCall'],
 					},
 				},
@@ -124,6 +142,7 @@ export class Revox implements INodeType {
 				},
 				displayOptions: {
 					show: {
+						resource: ['call'],
 						operation: ['placeCall'],
 					},
 				},
@@ -139,6 +158,7 @@ export class Revox implements INodeType {
 				type: 'boolean',
 				displayOptions: {
 					show: {
+						resource: ['call'],
 						operation: ['placeCall'],
 					},
 				},
@@ -151,6 +171,7 @@ export class Revox implements INodeType {
 				type: 'string',
 				displayOptions: {
 					show: {
+						resource: ['call'],
 						operation: ['placeCall'],
 					},
 				},
@@ -170,6 +191,7 @@ export class Revox implements INodeType {
 				},
 				displayOptions: {
 					show: {
+						resource: ['call'],
 						operation: ['placeCall'],
 					},
 				},
@@ -183,6 +205,7 @@ export class Revox implements INodeType {
 				type: 'string',
 				displayOptions: {
 					show: {
+						resource: ['call'],
 						operation: ['getCall'],
 					},
 				},
@@ -197,11 +220,12 @@ export class Revox implements INodeType {
 				type: 'number',
 				displayOptions: {
 					show: {
+						resource: ['call'],
 						operation: ['getCallHistory'],
 					},
 				},
-				default: 1,
-				description: 'Page number for pagination',
+				default: 0,
+				description: 'Page number for pagination (0-based, per API)',
 			},
 			{
 				displayName: 'Page Size',
@@ -209,11 +233,143 @@ export class Revox implements INodeType {
 				type: 'number',
 				displayOptions: {
 					show: {
+						resource: ['call'],
 						operation: ['getCallHistory'],
 					},
 				},
 				default: 10,
-				description: 'Number of calls per page',
+				description: 'Number of calls per page (sent as page_size to API)',
+			},
+			// Assistant ID for Place Call (optional)
+			{
+				displayName: 'Assistant ID',
+				name: 'assistantId',
+				type: 'string',
+				displayOptions: {
+					show: {
+						resource: ['call'],
+						operation: ['placeCall'],
+					},
+				},
+				default: '',
+				description:
+					'Use a pre-created assistant by ID. If set, prompt/voice/webhook from this form are ignored.',
+			},
+			// Assistants: Create
+			{
+				displayName: 'Name',
+				name: 'assistantName',
+				type: 'string',
+				displayOptions: {
+					show: {
+						resource: ['assistant'],
+						operation: ['createAssistant'],
+					},
+				},
+				default: '',
+				required: true,
+				description: 'Name of the assistant',
+			},
+			{
+				displayName: 'Prompt',
+				name: 'assistantPrompt',
+				type: 'string',
+				typeOptions: { rows: 4 },
+				displayOptions: {
+					show: {
+						resource: ['assistant'],
+						operation: ['createAssistant'],
+					},
+				},
+				default: '',
+				required: true,
+				description: 'System prompt for the LLM (gpt-4.1)',
+			},
+			{
+				displayName: 'First Sentence',
+				name: 'firstSentence',
+				type: 'string',
+				displayOptions: {
+					show: {
+						resource: ['assistant'],
+						operation: ['createAssistant'],
+					},
+				},
+				default: '',
+				description: 'First sentence to use for the call',
+			},
+			{
+				displayName: 'Webhook URL',
+				name: 'assistantWebhookUrl',
+				type: 'string',
+				displayOptions: {
+					show: {
+						resource: ['assistant'],
+						operation: ['createAssistant'],
+					},
+				},
+				default: '',
+				description: 'Webhook URL to call when the call is completed',
+			},
+			{
+				displayName: 'Voice Name or ID',
+				name: 'assistantVoice',
+				type: 'options',
+				default: '',
+				typeOptions: {
+					loadOptionsMethod: 'getVoices',
+				},
+				displayOptions: {
+					show: {
+						resource: ['assistant'],
+						operation: ['createAssistant'],
+					},
+				},
+				description:
+					'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+			},
+			// Assistants: Get / Update / Delete
+			{
+				displayName: 'Assistant ID',
+				name: 'assistantIdForOp',
+				type: 'string',
+				displayOptions: {
+					show: {
+						resource: ['assistant'],
+						operation: ['getAssistant', 'updateAssistant', 'deleteAssistant'],
+					},
+				},
+				default: '',
+				required: true,
+				description: 'The ID of the assistant',
+			},
+			// Update Assistant fields (optional)
+			{
+				displayName: 'Name',
+				name: 'updateAssistantName',
+				type: 'string',
+				displayOptions: {
+					show: {
+						resource: ['assistant'],
+						operation: ['updateAssistant'],
+					},
+				},
+				default: '',
+				description: 'Updated name',
+			},
+			{
+				displayName: 'Prompt',
+				name: 'updateAssistantPrompt',
+				type: 'string',
+				typeOptions: { rows: 4 },
+				displayOptions: {
+					show: {
+						resource: ['assistant'],
+						operation: ['updateAssistant'],
+					},
+				},
+				default: '',
+				description: 'Updated system prompt',
 			},
 		],
 	};
@@ -231,32 +387,34 @@ export class Revox implements INodeType {
 			try {
 				if (operation === 'placeCall') {
 					const phoneNumber = this.getNodeParameter('phoneNumber', i) as string;
-					const prompt = this.getNodeParameter('prompt', i) as string;
 					const forceNow = this.getNodeParameter('forceNow', i) as boolean;
-					const webhookUrl = this.getNodeParameter('webhookUrl', i) as string;
-					const voiceSelection = this.getNodeParameter('voice', i, '') as string;
+					const assistantId = this.getNodeParameter('assistantId', i, '') as string;
 
 					const body: Record<string, unknown> = {
 						phone_number: phoneNumber,
-						prompt: prompt,
 						force_now: forceNow,
 					};
 
-					if (webhookUrl && webhookUrl.trim()) {
-						body.webhook_url = webhookUrl.trim();
-					}
+					if (assistantId && assistantId.trim()) {
+						body.assistant_id = assistantId.trim();
+					} else {
+						const prompt = this.getNodeParameter('prompt', i) as string;
+						const webhookUrl = this.getNodeParameter('webhookUrl', i) as string;
+						const voiceSelection = this.getNodeParameter('voice', i, '') as string;
 
-					if (voiceSelection) {
-						const [providerPart, idPart] = voiceSelection.split(':');
-						const provider = providerPart || 'cartesia';
-						const id = idPart?.trim();
-
-						if (id) {
-							body.voice = {
-								provider,
-								id,
-							};
+						const assistant: Record<string, unknown> = {
+							prompt,
+						};
+						if (webhookUrl && webhookUrl.trim()) {
+							assistant.webhook_url = webhookUrl.trim();
 						}
+						if (voiceSelection) {
+							const [providerPart, idPart] = voiceSelection.split(':');
+							const provider = providerPart || 'cartesia';
+							const id = idPart?.trim();
+							if (id) assistant.voice = { provider, id };
+						}
+						body.assistant = assistant;
 					}
 
 					const response = await this.helpers.httpRequest({
@@ -302,18 +460,127 @@ export class Revox implements INodeType {
 						},
 						qs: {
 							page,
-							pageSize,
+							page_size: pageSize,
 						},
 						json: true,
 					});
 
 					// Return each call as a separate item
-					for (const call of response.calls) {
+					const calls = Array.isArray(response?.calls) ? response.calls : [];
+					for (const call of calls) {
 						returnData.push({
 							json: call,
 							pairedItem: { item: i },
 						});
 					}
+				} else if (operation === 'createAssistant') {
+					const name = this.getNodeParameter('assistantName', i) as string;
+					const prompt = this.getNodeParameter('assistantPrompt', i) as string;
+					const firstSentence = this.getNodeParameter('firstSentence', i, '') as string;
+					const webhookUrl = this.getNodeParameter('assistantWebhookUrl', i, '') as string;
+					const voiceSelection = this.getNodeParameter('assistantVoice', i, '') as string;
+
+					const body: Record<string, unknown> = {
+						name,
+						prompt,
+					};
+					if (firstSentence && firstSentence.trim()) body.first_sentence = firstSentence.trim();
+					if (webhookUrl && webhookUrl.trim()) body.webhook_url = webhookUrl.trim();
+					if (voiceSelection) {
+						const [providerPart, idPart] = voiceSelection.split(':');
+						const provider = providerPart || 'cartesia';
+						const id = idPart?.trim();
+						if (id) body.voice = { provider, id };
+					}
+
+					const response = await this.helpers.httpRequest({
+						method: 'POST',
+						url: `${baseUrl}/api/assistants`,
+						headers: {
+							Authorization: `Bearer ${apiKey}`,
+							'Content-Type': 'application/json',
+						},
+						body,
+						json: true,
+					});
+
+					returnData.push({
+						json: response.assistant ?? response,
+						pairedItem: { item: i },
+					});
+				} else if (operation === 'listAssistants') {
+					const response = await this.helpers.httpRequest({
+						method: 'GET',
+						url: `${baseUrl}/api/assistants`,
+						headers: {
+							Authorization: `Bearer ${apiKey}`,
+						},
+						json: true,
+					});
+
+					const assistants = Array.isArray(response?.assistants) ? response.assistants : [];
+					for (const assistant of assistants) {
+						returnData.push({
+							json: assistant,
+							pairedItem: { item: i },
+						});
+					}
+				} else if (operation === 'getAssistant') {
+					const assistantId = this.getNodeParameter('assistantIdForOp', i) as string;
+
+					const response = await this.helpers.httpRequest({
+						method: 'GET',
+						url: `${baseUrl}/api/assistants/${assistantId}`,
+						headers: {
+							Authorization: `Bearer ${apiKey}`,
+						},
+						json: true,
+					});
+
+					returnData.push({
+						json: response.assistant ?? response,
+						pairedItem: { item: i },
+					});
+				} else if (operation === 'updateAssistant') {
+					const assistantId = this.getNodeParameter('assistantIdForOp', i) as string;
+					const name = this.getNodeParameter('updateAssistantName', i, '') as string;
+					const prompt = this.getNodeParameter('updateAssistantPrompt', i, '') as string;
+
+					const body: Record<string, unknown> = {};
+					if (name && name.trim()) body.name = name.trim();
+					if (prompt !== undefined && prompt !== '') body.prompt = prompt;
+
+					const response = await this.helpers.httpRequest({
+						method: 'PATCH',
+						url: `${baseUrl}/api/assistants/${assistantId}`,
+						headers: {
+							Authorization: `Bearer ${apiKey}`,
+							'Content-Type': 'application/json',
+						},
+						body: Object.keys(body).length ? body : {},
+						json: true,
+					});
+
+					returnData.push({
+						json: response.assistant ?? response,
+						pairedItem: { item: i },
+					});
+				} else if (operation === 'deleteAssistant') {
+					const assistantId = this.getNodeParameter('assistantIdForOp', i) as string;
+
+					const response = await this.helpers.httpRequest({
+						method: 'DELETE',
+						url: `${baseUrl}/api/assistants/${assistantId}`,
+						headers: {
+							Authorization: `Bearer ${apiKey}`,
+						},
+						json: true,
+					});
+
+					returnData.push({
+						json: response ?? { success: true },
+						pairedItem: { item: i },
+					});
 				}
 			} catch (error) {
 				if (this.continueOnFail()) {

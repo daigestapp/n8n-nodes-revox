@@ -3,14 +3,13 @@ import {
 	ICredentialTestRequest,
 	ICredentialType,
 	INodeProperties,
-	Icon,
 } from 'n8n-workflow';
 
 export class RevoxApi implements ICredentialType {
 	name = 'revoxApi';
 	displayName = 'Revox API';
 	documentationUrl = 'https://docs.getrevox.com';
-	icon: Icon = 'file:../icons/revox.svg';
+	icon = 'file:../icons/revox.svg';
 	properties: INodeProperties[] = [
 		{
 			displayName: 'API Key',
