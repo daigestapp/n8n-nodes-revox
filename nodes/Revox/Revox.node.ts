@@ -12,8 +12,7 @@ export class Revox implements INodeType {
 		loadOptions: {
 			async getVoices(this: ILoadOptionsFunctions) {
 				const credentials = await this.getCredentials('revoxApi');
-				const baseUrl = credentials.baseUrl as string;
-				const apiKey = credentials.apiKey as string;
+				const baseUrl = (credentials.baseUrl as string)?.replace(/\/$/, '') || 'https://www.getrevox.com';
 
 				let response: {
 					voices?: Array<{
@@ -24,12 +23,10 @@ export class Revox implements INodeType {
 					}>;
 				};
 				try {
-					response = await this.helpers.httpRequest({
+					response = await this.helpers.httpRequestWithAuthentication.call(this, 'revoxApi', {
 						method: 'GET',
-						url: `${baseUrl}/api/voices`,
-						headers: {
-							Authorization: `Bearer ${apiKey}`,
-						},
+						baseURL: baseUrl,
+						url: '/api/voices',
 						json: true,
 					});
 				} catch (error) {
@@ -380,8 +377,7 @@ export class Revox implements INodeType {
 		const operation = this.getNodeParameter('operation', 0);
 
 		const credentials = await this.getCredentials('revoxApi');
-		const baseUrl = credentials.baseUrl as string;
-		const apiKey = credentials.apiKey as string;
+		const baseUrl = (credentials.baseUrl as string)?.replace(/\/$/, '') || 'https://www.getrevox.com';
 
 		for (let i = 0; i < items.length; i++) {
 			try {
@@ -417,11 +413,11 @@ export class Revox implements INodeType {
 						body.assistant = assistant;
 					}
 
-					const response = await this.helpers.httpRequest({
+					const response = await this.helpers.httpRequestWithAuthentication.call(this, 'revoxApi', {
 						method: 'POST',
-						url: `${baseUrl}/api/call`,
+						baseURL: baseUrl,
+						url: '/api/call',
 						headers: {
-							Authorization: `Bearer ${apiKey}`,
 							'Content-Type': 'application/json',
 						},
 						body,
@@ -435,12 +431,10 @@ export class Revox implements INodeType {
 				} else if (operation === 'getCall') {
 					const callId = this.getNodeParameter('callId', i) as string;
 
-					const response = await this.helpers.httpRequest({
+					const response = await this.helpers.httpRequestWithAuthentication.call(this, 'revoxApi', {
 						method: 'GET',
-						url: `${baseUrl}/api/call/${callId}`,
-						headers: {
-							Authorization: `Bearer ${apiKey}`,
-						},
+						baseURL: baseUrl,
+						url: `/api/call/${callId}`,
 						json: true,
 					});
 
@@ -452,12 +446,10 @@ export class Revox implements INodeType {
 					const page = this.getNodeParameter('page', i) as number;
 					const pageSize = this.getNodeParameter('pageSize', i) as number;
 
-					const response = await this.helpers.httpRequest({
+					const response = await this.helpers.httpRequestWithAuthentication.call(this, 'revoxApi', {
 						method: 'GET',
-						url: `${baseUrl}/api/call`,
-						headers: {
-							Authorization: `Bearer ${apiKey}`,
-						},
+						baseURL: baseUrl,
+						url: '/api/call',
 						qs: {
 							page,
 							page_size: pageSize,
@@ -493,11 +485,11 @@ export class Revox implements INodeType {
 						if (id) body.voice = { provider, id };
 					}
 
-					const response = await this.helpers.httpRequest({
+					const response = await this.helpers.httpRequestWithAuthentication.call(this, 'revoxApi', {
 						method: 'POST',
-						url: `${baseUrl}/api/assistants`,
+						baseURL: baseUrl,
+						url: '/api/assistants',
 						headers: {
-							Authorization: `Bearer ${apiKey}`,
 							'Content-Type': 'application/json',
 						},
 						body,
@@ -509,12 +501,10 @@ export class Revox implements INodeType {
 						pairedItem: { item: i },
 					});
 				} else if (operation === 'listAssistants') {
-					const response = await this.helpers.httpRequest({
+					const response = await this.helpers.httpRequestWithAuthentication.call(this, 'revoxApi', {
 						method: 'GET',
-						url: `${baseUrl}/api/assistants`,
-						headers: {
-							Authorization: `Bearer ${apiKey}`,
-						},
+						baseURL: baseUrl,
+						url: '/api/assistants',
 						json: true,
 					});
 
@@ -528,12 +518,10 @@ export class Revox implements INodeType {
 				} else if (operation === 'getAssistant') {
 					const assistantId = this.getNodeParameter('assistantIdForOp', i) as string;
 
-					const response = await this.helpers.httpRequest({
+					const response = await this.helpers.httpRequestWithAuthentication.call(this, 'revoxApi', {
 						method: 'GET',
-						url: `${baseUrl}/api/assistants/${assistantId}`,
-						headers: {
-							Authorization: `Bearer ${apiKey}`,
-						},
+						baseURL: baseUrl,
+						url: `/api/assistants/${assistantId}`,
 						json: true,
 					});
 
@@ -550,11 +538,11 @@ export class Revox implements INodeType {
 					if (name && name.trim()) body.name = name.trim();
 					if (prompt !== undefined && prompt !== '') body.prompt = prompt;
 
-					const response = await this.helpers.httpRequest({
+					const response = await this.helpers.httpRequestWithAuthentication.call(this, 'revoxApi', {
 						method: 'PATCH',
-						url: `${baseUrl}/api/assistants/${assistantId}`,
+						baseURL: baseUrl,
+						url: `/api/assistants/${assistantId}`,
 						headers: {
-							Authorization: `Bearer ${apiKey}`,
 							'Content-Type': 'application/json',
 						},
 						body: Object.keys(body).length ? body : {},
@@ -568,12 +556,10 @@ export class Revox implements INodeType {
 				} else if (operation === 'deleteAssistant') {
 					const assistantId = this.getNodeParameter('assistantIdForOp', i) as string;
 
-					const response = await this.helpers.httpRequest({
+					const response = await this.helpers.httpRequestWithAuthentication.call(this, 'revoxApi', {
 						method: 'DELETE',
-						url: `${baseUrl}/api/assistants/${assistantId}`,
-						headers: {
-							Authorization: `Bearer ${apiKey}`,
-						},
+						baseURL: baseUrl,
+						url: `/api/assistants/${assistantId}`,
 						json: true,
 					});
 
